@@ -29,6 +29,9 @@ import logbook
 
 log = logbook.Logger('algo')
 
+def record(*args, **kwargs):
+	print('args={}, kwargs={}'.format(args, kwargs))
+    
 def initialize(context):
     # set_commission(commission.PerShare(cost=0.01, min_trade_cost=1.50))
     set_slippage(
@@ -48,14 +51,14 @@ def initialize(context):
     context.MyFireSaleAge = 6
 
     # over simplistic tracking of position age
-    context.age = {}
+    # context.age = {}
     print(len(context.portfolio.positions))
 
     # Rebalance
     EveryThisManyMinutes = 10
     TradingDayHours = 6.5
     TradingDayMinutes = int(TradingDayHours * 60)
-    for minutez in xrange(
+    for minutez in range(
         1,
         TradingDayMinutes,
         EveryThisManyMinutes
@@ -197,33 +200,38 @@ def my_compute_weights(context):
 
 
 def before_trading_start(context, data):
-    # Gets our pipeline output every day.
-    context.output = pipeline_output('my_pipeline')
+    # over simplistic tracking of position age
+    if not hasattr(context, 'age') or not context.age:
+        context.age = {}
+    today = get_datetime().floor('1D')
+    last_date = getattr(context, 'last_date', None)
+    if today != last_date:
+        # Gets our pipeline output every day.
+        context.output = pipeline_output('my_pipeline')
 
-    context.stocks_worst = context.output[
-        context.output['stocks_worst']].index.tolist()
+        context.stocks_worst = context.output[
+            context.output['stocks_worst']].index.tolist()
 
-    context.stocks_worst_weight = my_compute_weights(context)
+        context.stocks_worst_weight = my_compute_weights(context)
 
-    context.MyCandidate = cycle(context.stocks_worst)
+        context.MyCandidate = cycle(context.stocks_worst)
 
-    context.LowestPrice = context.MyLeastPrice  # reset beginning of day
-    print len(context.portfolio.positions)
-    for stock in context.portfolio.positions:
-        CurrPrice = float(data.current([stock], 'price'))
-        if CurrPrice < context.LowestPrice:
-            context.LowestPrice = CurrPrice
-        if stock in context.age:
-            context.age[stock] += 1
-        else:
-            context.age[stock] = 1
-    for stock in context.age:
-        if stock not in context.portfolio.positions:
-            context.age[stock] = 0
-        message = 'stock.symbol: {symbol}  :  age: {age}'
-        log.info(message.format(symbol=stock.symbol, age=context.age[stock]))
-
-    pass
+        context.LowestPrice = context.MyLeastPrice  # reset beginning of day
+        print(len(context.portfolio.positions))
+        for stock in context.portfolio.positions:
+            CurrPrice = float(data.current([stock], 'price'))
+            if CurrPrice < context.LowestPrice:
+                context.LowestPrice = CurrPrice
+            if stock in context.age:
+                context.age[stock] += 1
+            else:
+                context.age[stock] = 1
+        for stock in context.age:
+            if stock not in context.portfolio.positions:
+                context.age[stock] = 0
+            message = 'stock.symbol: {symbol}  :  age: {age}'
+            log.info(message.format(symbol=stock.symbol, age=context.age[stock]))
+        context.last_date = today
 
 
 def my_rebalance(context, data):
@@ -284,7 +292,7 @@ def my_rebalance(context, data):
 
     WeightThisBuyOrder = float(1.00 / context.MaxBuyOrdersAtOnce)
     for ThisBuyOrder in range(context.MaxBuyOrdersAtOnce):
-        stock = context.MyCandidate.next()
+        stock = next(context.MyCandidate)
         PH = data.history([stock], 'price', 20, '1d')
         PH_Avg = float(PH.mean())
         CurrPrice = float(data.current([stock], 'price'))
@@ -321,7 +329,7 @@ def my_record_vars(context, data):
     record(positions=len(context.portfolio.positions))
     if 0 < len(context.age):
         MaxAge = context.age[max(
-            context.age.keys(), key=(lambda k: context.age[k]))]
+            list(context.age.keys()), key=(lambda k: context.age[k]))]
         print MaxAge
         record(MaxAge=MaxAge)
     record(LowestPrice=context.LowestPrice)
@@ -331,7 +339,7 @@ def log_open_order(StockToLog):
     oo = get_open_orders()
     if len(oo) == 0:
         return
-    for stock, orders in oo.iteritems():
+    for stock, orders in oo.items():
         if stock == StockToLog:
             for o in orders:
                 message = 'Found open order for {amount} shares in {stock}'
@@ -342,7 +350,7 @@ def log_open_orders():
     oo = get_open_orders()
     if len(oo) == 0:
         return
-    for stock, orders in oo.iteritems():
+    for stock, orders in oo.items():
         for o in orders:
             message = 'Found open order for {amount} shares in {stock}'
             log.info(message.format(amount=o.amount, stock=stock))
@@ -352,7 +360,7 @@ def cancel_open_buy_orders(context, data):
     oo = get_open_orders()
     if len(oo) == 0:
         return
-    for stock, orders in oo.iteritems():
+    for stock, orders in oo.items():
         for o in orders:
             # message = 'Canceling order of {amount} shares in {stock}'
             # log.info(message.format(amount=o.amount, stock=stock))
@@ -364,7 +372,7 @@ def cancel_open_orders(context, data):
     oo = get_open_orders()
     if len(oo) == 0:
         return
-    for stock, orders in oo.iteritems():
+    for stock, orders in oo.items():
         for o in orders:
             # message = 'Canceling order of {amount} shares in {stock}'
             # log.info(message.format(amount=o.amount, stock=stock))
