@@ -49,7 +49,7 @@ def initialize(context):
 
     # over simplistic tracking of position age
     context.age = {}
-    print len(context.portfolio.positions)
+    print(len(context.portfolio.positions))
 
     # Rebalance
     EveryThisManyMinutes = 10
