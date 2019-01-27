@@ -1,0 +1,12 @@
+__pycache__
+*.pyc
+.eggs
+build
+dist
+*.egg-info
+.pytest_cache
+*.pkl
+.envrc
+.vscode
+.coverage
+.python-version
