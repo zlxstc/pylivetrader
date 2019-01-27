@@ -330,7 +330,7 @@ def my_record_vars(context, data):
     if 0 < len(context.age):
         MaxAge = context.age[max(
             list(context.age.keys()), key=(lambda k: context.age[k]))]
-        print MaxAge
+        print(MaxAge)
         record(MaxAge=MaxAge)
     record(LowestPrice=context.LowestPrice)
 
