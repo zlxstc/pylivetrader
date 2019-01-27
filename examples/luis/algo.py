@@ -34,14 +34,11 @@ def record(*args, **kwargs):
     
 def initialize(context):
     # set_commission(commission.PerShare(cost=0.01, min_trade_cost=1.50))
-    set_slippage(
-        slippage.VolumeShareSlippage(
-            volume_limit=.20,
-            price_impact=0.0))
+    # set_slippage(slippage.VolumeShareSlippage(volume_limit=.20,price_impact=0.0))
     # set_slippage(slippage.FixedSlippage(spread=0.00))
-    set_commission(commission.PerTrade(cost=0.00))
+    # set_commission(commission.PerTrade(cost=0.00))
     # set_slippage(slippage.FixedSlippage(spread=0.00))
-    set_long_only()
+    # set_long_only()
 
     context.MaxCandidates = 150
     context.MaxBuyOrdersAtOnce = 30
